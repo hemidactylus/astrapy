@@ -1,9 +1,12 @@
+from typing import Any, Dict, Tuple, Optional
 import requests
+from requests.models import Response
 import logging
 import re
 
 from astrapy import __version__
 from astrapy.defaults import DEFAULT_TIMEOUT
+from astrapy.types import JSON_TYPE
 
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG) # Apply if wishing to debug requests
@@ -20,7 +23,7 @@ class http_methods:
 package_name = __name__.split(".")[0]
 
 
-def log_request_response(r, json_data):
+def log_request_response(r: Response, json_data: Optional[JSON_TYPE]) -> None:
     logger.debug(f"Request URL: {r.url}")
     logger.debug(f"Request method: {r.request.method}")
     logger.debug(f"Request headers: {r.request.headers}")
@@ -34,14 +37,14 @@ def log_request_response(r, json_data):
 
 
 def make_request(
-    base_url,
-    auth_header,
-    token,
-    method=http_methods.POST,
-    path=None,
-    json_data=None,
-    url_params=None,
-):
+    base_url: str,
+    auth_header: str,
+    token: str,
+    method: str = http_methods.POST,
+    path: Optional[str] = None,
+    json_data: Optional[JSON_TYPE] = None,
+    url_params: Optional[JSON_TYPE] = None,
+) -> Response:
     r = requests.request(
         method=method,
         url=f"{base_url}{path}",
@@ -57,12 +60,12 @@ def make_request(
     return r
 
 
-def make_payload(top_level, **kwargs):
+def make_payload(top_level: str, **kwargs: Dict[str, Any]) -> JSON_TYPE:
     params = {}
     for key, value in kwargs.items():
         params[key] = value
 
-    json_query = {top_level: {}}
+    json_query: JSON_TYPE = {top_level: {}}
 
     # Adding keys only if they're provided
     for key, value in params.items():
@@ -72,7 +75,7 @@ def make_payload(top_level, **kwargs):
     return json_query
 
 
-def parse_endpoint_url(url):
+def parse_endpoint_url(url: str) -> Tuple[str, str, str]:
     # Regular expression pattern to match the given URL format
     pattern = r"https://(?P<db_id>[a-fA-F0-9\-]{36})-(?P<db_region>[a-zA-Z0-9\-]+)\.(?P<db_hostname>[a-zA-Z0-9\-\.]+\.com)"
 

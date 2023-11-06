@@ -21,6 +21,8 @@ tests/screenshots
 manifest
 dist
 
+.mypy_cache
+
 # premade .gitignore from GitHub
 
 # Byte-compiled / optimized / DLL files
