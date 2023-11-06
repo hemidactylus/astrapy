@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from requests.models import Response
+from typing import cast, Optional
+
 from astrapy.utils import make_request, http_methods
+from astrapy.types import JSON_DICT
 from astrapy.defaults import DEFAULT_DEV_OPS_PATH_PREFIX, DEFAULT_DEV_OPS_URL
 
 import logging
@@ -27,7 +31,7 @@ class AstraDBOps:
         self.token = "Bearer " + token
         self.base_url = f"https://{dev_ops_url}{DEFAULT_DEV_OPS_PATH_PREFIX}"
 
-    def _ops_request(self, method, path, options=None, json_data=None):
+    def _ops_request(self, method: str, path: str, options: Optional[JSON_DICT] = None, json_data: Optional[JSON_DICT] = None) -> Response:
         options = {} if options is None else options
 
         return make_request(
@@ -339,8 +343,11 @@ class AstraDBOps:
             json_data=tenant,
         ).json()
 
-    def get_streaming_tenant(self, tenant=""):
-        return self._ops_request(
-            method=http_methods.GET,
-            path=f"/streaming/tenants/{tenant}/limits",
-        ).json()
+    def get_streaming_tenant(self, tenant: str = "") -> JSON_DICT:
+        return cast(
+            JSON_DICT,
+                self._ops_request(
+                method=http_methods.GET,
+                path=f"/streaming/tenants/{tenant}/limits",
+            ).json(),
+        )

@@ -5,8 +5,8 @@ import logging
 import re
 
 from astrapy import __version__
+from astrapy.types import JSON_DICT
 from astrapy.defaults import DEFAULT_TIMEOUT
-from astrapy.types import JSON_TYPE
 
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG) # Apply if wishing to debug requests
@@ -23,7 +23,7 @@ class http_methods:
 package_name = __name__.split(".")[0]
 
 
-def log_request_response(r: Response, json_data: Optional[JSON_TYPE]) -> None:
+def log_request_response(r: Response, json_data: Optional[JSON_DICT]) -> None:
     logger.debug(f"Request URL: {r.url}")
     logger.debug(f"Request method: {r.request.method}")
     logger.debug(f"Request headers: {r.request.headers}")
@@ -42,8 +42,8 @@ def make_request(
     token: str,
     method: str = http_methods.POST,
     path: Optional[str] = None,
-    json_data: Optional[JSON_TYPE] = None,
-    url_params: Optional[JSON_TYPE] = None,
+    json_data: Optional[JSON_DICT] = None,
+    url_params: Optional[JSON_DICT] = None,
 ) -> Response:
     r = requests.request(
         method=method,
@@ -60,12 +60,12 @@ def make_request(
     return r
 
 
-def make_payload(top_level: str, **kwargs: Dict[str, Any]) -> JSON_TYPE:
+def make_payload(top_level: str, **kwargs: Dict[str, Any]) -> JSON_DICT:
     params = {}
     for key, value in kwargs.items():
         params[key] = value
 
-    json_query: JSON_TYPE = {top_level: {}}
+    json_query: JSON_DICT = {top_level: {}}
 
     # Adding keys only if they're provided
     for key, value in params.items():
