@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class AstraDBOps:
-    def __init__(self, token, dev_ops_url=None):
+    def __init__(self, token: str, dev_ops_url: Optional[str] = None) -> None:
         dev_ops_url = dev_ops_url or DEFAULT_DEV_OPS_URL
 
         self.token = "Bearer " + token
@@ -44,14 +44,26 @@ class AstraDBOps:
             path=path,
         )
 
-    def get_databases(self, options=None):
-        response = self._ops_request(
+    def _json_ops_request(self, method: str, path: str, options: Optional[JSON_DICT] = None, json_data: Optional[JSON_DICT] = None) -> JSON_DICT:
+        req_result = self._ops_request(
+            method=method,
+            path=path,
+            options=options,
+            json_data=json_data,
+        )
+        return cast(
+            JSON_DICT,
+            req_result.json(),
+        )
+
+    def get_databases(self, options: Optional[JSON_DICT] = None) -> JSON_DICT:
+        response = self._json_ops_request(
             method=http_methods.GET, path="/databases", options=options
-        ).json()
+        )
 
         return response
 
-    def create_database(self, database_definition=None):
+    def create_database(self, database_definition: Optional[JSON_DICT] = None) -> Optional[JSON_DICT]:
         r = self._ops_request(
             method=http_methods.POST, path="/databases", json_data=database_definition
         )
@@ -61,7 +73,7 @@ class AstraDBOps:
 
         return None
 
-    def terminate_database(self, database=""):
+    def terminate_database(self, database: str = "") -> Optional[str]:
         r = self._ops_request(
             method=http_methods.POST, path=f"/databases/{database}/terminate"
         )
@@ -71,283 +83,284 @@ class AstraDBOps:
 
         return None
 
-    def get_database(self, database="", options=None):
-        return self._ops_request(
+    def get_database(self, database: str = "", options: Optional[JSON_DICT] = None) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET,
             path=f"/databases/{database}",
             options=options,
-        ).json()
+        )
 
-    def create_keyspace(self, database="", keyspace=""):
+    def create_keyspace(self, database: str = "", keyspace: str = "") -> Response:
         return self._ops_request(
             method=http_methods.POST,
             path=f"/databases/{database}/keyspaces/{keyspace}",
         )
 
-    def park_database(self, database=""):
-        return self._ops_request(
+    def park_database(self, database: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.POST, path=f"/databases/{database}/park"
-        ).json()
+        )
 
-    def unpark_database(self, database=""):
-        return self._ops_request(
+    def unpark_database(self, database: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.POST, path=f"/databases/{database}/unpark"
-        ).json()
+        )
 
-    def resize_database(self, database="", options=None):
-        return self._ops_request(
+    def resize_database(self, database: str = "", options: Optional[JSON_DICT] = None) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.POST,
             path=f"/databases/{database}/resize",
             json_data=options,
-        ).json()
+        )
 
-    def reset_database_password(self, database="", options=None):
-        return self._ops_request(
+    def reset_database_password(self, database: str = "", options: Optional[JSON_DICT] = None) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.POST,
             path=f"/databases/{database}/resetPassword",
             json_data=options,
-        ).json()
+        )
 
-    def get_secure_bundle(self, database=""):
-        return self._ops_request(
+    def get_secure_bundle(self, database: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.POST,
             path=f"/databases/{database}/secureBundleURL",
-        ).json()
+        )
 
-    def get_datacenters(self, database=""):
-        return self._ops_request(
+    def get_datacenters(self, database: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET,
             path=f"/databases/{database}/datacenters",
-        ).json()
+        )
 
-    def create_datacenter(self, database="", options=None):
-        return self._ops_request(
+    def create_datacenter(self, database: str = "", options: Optional[JSON_DICT] = None) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.POST,
             path=f"/databases/{database}/datacenters",
             json_data=options,
-        ).json()
+        )
 
-    def terminate_datacenter(self, database="", datacenter=""):
-        return self._ops_request(
+    def terminate_datacenter(self, database: str = "", datacenter: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.POST,
             path=f"/databases/{database}/datacenters/{datacenter}/terminate",
-        ).json()
+        )
 
-    def get_access_list(self, database=""):
-        return self._ops_request(
+    def get_access_list(self, database: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET,
             path=f"/databases/{database}/access-list",
-        ).json()
+        )
 
-    def replace_access_list(self, database="", access_list=None):
-        return self._ops_request(
+    def replace_access_list(self, database: str = "", access_list: Optional[JSON_DICT] = None) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.PUT,
             path=f"/databases/{database}/access-list",
             json_data=access_list,
-        ).json()
+        )
 
-    def update_access_list(self, database="", access_list=None):
-        return self._ops_request(
+    def update_access_list(self, database: str = "", access_list: Optional[JSON_DICT] = None) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.PATCH,
             path=f"/databases/{database}/access-list",
             json_data=access_list,
-        ).json()
+        )
 
-    def add_access_list_address(self, database="", address=None):
-        return self._ops_request(
+    def add_access_list_address(self, database: str = "", address: Optional[JSON_DICT] = None) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.POST,
             path=f"/databases/{database}/access-list",
             json_data=address,
-        ).json()
+        )
 
-    def delete_access_list(self, database=""):
-        return self._ops_request(
+    def delete_access_list(self, database: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.DELETE,
             path=f"/databases/{database}/access-list",
-        ).json()
+        )
 
-    def get_private_link(self, database=""):
-        return self._ops_request(
+    def get_private_link(self, database: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET,
             path=f"/organizations/clusters/{database}/private-link",
-        ).json()
+        )
 
-    def get_datacenter_private_link(self, database="", datacenter=""):
-        return self._ops_request(
+    def get_datacenter_private_link(self, database: str = "", datacenter: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET,
             path=f"/organizations/clusters/{database}/datacenters/{datacenter}/private-link",
-        ).json()
+        )
 
     def create_datacenter_private_link(
-        self, database="", datacenter="", private_link=None
-    ):
-        return self._ops_request(
+        self, database: str = "", datacenter: str = "", private_link: Optional[JSON_DICT] = None
+    ) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.POST,
             path=f"/organizations/clusters/{database}/datacenters/{datacenter}/private-link",
             json_data=private_link,
-        ).json()
+        )
 
-    def create_datacenter_endpoint(self, database="", datacenter="", endpoint=None):
-        return self._ops_request(
+    def create_datacenter_endpoint(self, database: str = "", datacenter: str = "", endpoint: Optional[JSON_DICT] = None) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.POST,
             path=f"/organizations/clusters/{database}/datacenters/{datacenter}/endpoint",
             json_data=endpoint,
-        ).json()
+        )
 
-    def update_datacenter_endpoint(self, database="", datacenter="", endpoint=None):
-        return self._ops_request(
+    def update_datacenter_endpoint(self, database: str = "", datacenter: str = "", endpoint: JSON_DICT = {}) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.PUT,
             path=f"/organizations/clusters/{database}/datacenters/{datacenter}/endpoints/{endpoint['id']}",
             json_data=endpoint,
-        ).json()
+        )
 
-    def get_datacenter_endpoint(self, database="", datacenter="", endpoint=""):
-        return self._ops_request(
+    def get_datacenter_endpoint(self, database: str = "", datacenter: str = "", endpoint: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET,
             path=f"/organizations/clusters/{database}/datacenters/{datacenter}/endpoints/{endpoint}",
-        ).json()
+        )
 
-    def delete_datacenter_endpoint(self, database="", datacenter="", endpoint=""):
-        return self._ops_request(
+    def delete_datacenter_endpoint(self, database: str = "", datacenter: str = "", endpoint: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.DELETE,
             path=f"/organizations/clusters/{database}/datacenters/{datacenter}/endpoints/{endpoint}",
-        ).json()
+        )
 
-    def get_available_classic_regions(self):
-        return self._ops_request(
+    def get_available_classic_regions(self) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET, path=f"/availableRegions"
-        ).json()
+        )
 
-    def get_available_regions(self):
-        return self._ops_request(
+    def get_available_regions(self) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET, path=f"/regions/serverless"
-        ).json()
+        )
 
-    def get_roles(self):
-        return self._ops_request(
+    def get_roles(self) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET, path=f"/organizations/roles"
-        ).json()
+        )
 
-    def create_role(self, role_definition=None):
-        return self._ops_request(
+    def create_role(self, role_definition: Optional[JSON_DICT] = None) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.POST,
             path=f"/organizations/roles",
             json_data=role_definition,
-        ).json()
+        )
 
-    def get_role(self, role=""):
-        return self._ops_request(
+    def get_role(self, role: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET, path=f"/organizations/roles/{role}"
-        ).json()
+        )
 
-    def update_role(self, role="", role_definition=None):
-        return self._ops_request(
+    def update_role(self, role: str = "", role_definition: Optional[JSON_DICT] = None) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.PUT,
             path=f"/organizations/roles/{role}",
             json_data=role_definition,
-        ).json()
+        )
 
-    def delete_role(self, role=""):
-        return self._ops_request(
+    def delete_role(self, role: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.DELETE, path=f"/organizations/roles/{role}"
-        ).json()
+        )
 
-    def invite_user(self, user_definition=None):
-        return self._ops_request(
+    def invite_user(self, user_definition: Optional[JSON_DICT] = None) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.PUT,
             path=f"/organizations/users",
             json_data=user_definition,
-        ).json()
+        )
 
-    def get_users(self):
-        return self._ops_request(
+    def get_users(self) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET, path=f"/organizations/users"
-        ).json()
+        )
 
-    def get_user(self, user=""):
-        return self._ops_request(
+    def get_user(self, user: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET, path=f"/organizations/users/{user}"
-        ).json()
+        )
 
-    def remove_user(self, user=""):
-        return self._ops_request(
+    def remove_user(self, user: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.DELETE, path=f"/organizations/users/{user}"
-        ).json()
+        )
 
-    def update_user_roles(self, user="", roles=None):
-        return self._ops_request(
+    def update_user_roles(self, user: str = "", roles: Optional[JSON_DICT] = None) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.PUT,
             path=f"/organizations/users/{user}/roles",
             json_data=roles,
-        ).json()
+        )
 
-    def get_clients(self):
-        return self._ops_request(
+    def get_clients(self) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET, path=f"/clientIdSecrets"
-        ).json()
+        )
 
-    def create_token(self, roles=None):
-        return self._ops_request(
+    def create_token(self, roles: Optional[JSON_DICT] = None) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.POST,
             path=f"/clientIdSecrets",
             json_data=roles,
-        ).json()
+        )
 
-    def delete_token(self, token=""):
-        return self._ops_request(
+    def delete_token(self, token: str = "") -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.DELETE, path=f"/clientIdSecret/{token}"
-        ).json()
+        )
 
-    def get_organization(self):
-        return self._ops_request(method=http_methods.GET, path=f"/currentOrg").json()
+    def get_organization(self) -> JSON_DICT:
+        return self._json_ops_request(method=http_methods.GET, path=f"/currentOrg")
 
-    def get_access_lists(self):
-        return self._ops_request(method=http_methods.GET, path=f"/access-lists").json()
+    def get_access_lists(self) -> JSON_DICT:
+        return self._json_ops_request(method=http_methods.GET, path=f"/access-lists")
 
-    def get_access_list_template(self):
-        return self._ops_request(
+    def get_access_list_template(self) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET, path=f"/access-list/template"
-        ).json()
+        )
 
-    def validate_access_list(self):
-        return self._ops_request(
+    def validate_access_list(self) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.POST, path=f"/access-list/validate"
-        ).json()
+        )
 
-    def get_private_links(self):
-        return self._ops_request(
+    def get_private_links(self) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET, path=f"/organizations/private-link"
-        ).json()
+        )
 
-    def get_streaming_providers(self):
-        return self._ops_request(
+    def get_streaming_providers(self) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET, path=f"/streaming/providers"
-        ).json()
+        )
 
-    def get_streaming_tenants(self):
-        return self._ops_request(
+    def get_streaming_tenants(self) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.GET, path=f"/streaming/tenants"
-        ).json()
+        )
 
-    def create_streaming_tenant(self, tenant=None):
-        return self._ops_request(
+    def create_streaming_tenant(self, tenant: Optional[JSON_DICT] = None) -> JSON_DICT:
+        return self._json_ops_request(
             method=http_methods.POST,
             path=f"/streaming/tenants",
             json_data=tenant,
-        ).json()
+        )
 
-    def delete_streaming_tenant(self, tenant="", cluster=""):
-        return self._ops_request(
+    def delete_streaming_tenant(self, tenant: str = "", cluster: str = "") -> None:
+        r = self._ops_request(
             method=http_methods.DELETE,
             path=f"/streaming/tenants/{tenant}/clusters/{cluster}",
-            json_data=tenant,
-        ).json()
+        )
+
+        if r.status_code == 202:  # 'Accepted'
+            return None
+        else:
+            raise ValueError(r.text)
 
     def get_streaming_tenant(self, tenant: str = "") -> JSON_DICT:
-        return cast(
-            JSON_DICT,
-                self._ops_request(
-                method=http_methods.GET,
-                path=f"/streaming/tenants/{tenant}/limits",
-            ).json(),
+        return self._json_ops_request(
+            method=http_methods.GET,
+            path=f"/streaming/tenants/{tenant}/limits",
         )

@@ -60,19 +60,16 @@ def make_request(
     return r
 
 
-def make_payload(top_level: str, **kwargs: Dict[str, Any]) -> JSON_DICT:
-    params = {}
-    for key, value in kwargs.items():
-        params[key] = value
-
-    json_query: JSON_DICT = {top_level: {}}
-
-    # Adding keys only if they're provided
-    for key, value in params.items():
-        if value is not None:
-            json_query[top_level][key] = value
-
-    return json_query
+def make_payload(top_level: str, **kwargs: Any) -> JSON_DICT:
+    # Only non null, non-{} values are included in the payload
+    return {
+        top_level: {
+            k: v
+            for k, v in kwargs.items()
+            if v is not None
+            if v != {}
+        }
+    }
 
 
 def parse_endpoint_url(url: str) -> Tuple[str, str, str]:

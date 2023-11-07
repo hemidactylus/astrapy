@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+from typing import Any, cast, Callable, Dict, Iterable, List, Optional
+
 from astrapy.defaults import (
     DEFAULT_AUTH_HEADER,
     DEFAULT_KEYSPACE_NAME,
     DEFAULT_BASE_PATH,
 )
+from astrapy.types import JSON_DICT
 from astrapy.utils import make_payload, make_request, http_methods, parse_endpoint_url
 
 import logging
@@ -28,11 +32,11 @@ logger = logging.getLogger(__name__)
 class AstraDBCollection:
     def __init__(
         self,
-        collection_name,
-        astra_db=None,
-        token=None,
-        api_endpoint=None,
-        namespace=None,
+        collection_name: str,
+        astra_db: Optional[AstraDB] = None,
+        token: Optional[str] = None,
+        api_endpoint: Optional[str] = None,
+        namespace: Optional[str] = None,
     ):
         if astra_db is None:
             if token is None or api_endpoint is None:
@@ -46,22 +50,24 @@ class AstraDBCollection:
         self.collection_name = collection_name
         self.base_path = f"{self.astra_db.base_path}/{collection_name}"
 
-    def _request(self, *args, skip_error_check=False, **kwargs):
+    def _request(self, method: str, path: str, json_data: Optional[JSON_DICT] = None, url_params: Optional[JSON_DICT] = None, skip_error_check: bool= False) -> JSON_DICT:
         response = make_request(
-            *args,
-            **kwargs,
             base_url=self.astra_db.base_url,
             auth_header=DEFAULT_AUTH_HEADER,
             token=self.astra_db.token,
+            method=method,
+            path=path,
+            json_data=json_data,
+            url_params=url_params,
         )
-        responsebody = response.json()
+        responsebody = cast(JSON_DICT, response.json())
 
         if not skip_error_check and "errors" in responsebody:
             raise ValueError(json.dumps(responsebody["errors"]))
         else:
             return responsebody
 
-    def _get(self, path=None, options=None):
+    def _get(self, path: Optional[str] = None, options: Optional[JSON_DICT] = None) -> JSON_DICT:
         full_path = f"{self.base_path}/{path}" if path else self.base_path
         response = self._request(
             method=http_methods.GET, path=full_path, url_params=options
@@ -70,16 +76,22 @@ class AstraDBCollection:
             return response
         return None
 
-    def _post(self, path=None, document=None):
+    def _post(self, path: Optional[str] = None, document: Optional[JSON_DICT] = None) -> JSON_DICT:
         response = self._request(
             method=http_methods.POST, path=f"{self.base_path}", json_data=document
         )
         return response
 
-    def get(self, path=None):
+    def _put(self, path: Optional[str] = None, document: Optional[JSON_DICT] = None) -> JSON_DICT:
+        response = self._request(
+            method=http_methods.PUT, path=f"{self.base_path}", json_data=document
+        )
+        return response
+
+    def get(self, path: Optional[str] = None) -> JSON_DICT:
         return self._get(path=path)
 
-    def find(self, filter=None, projection=None, sort={}, options=None):
+    def find(self, filter: Optional[JSON_DICT] = None, projection: Optional[JSON_DICT] = None, sort: Optional[JSON_DICT] ={}, options: Optional[JSON_DICT] = None) -> JSON_DICT:
         json_query = make_payload(
             top_level="find",
             filter=filter,
@@ -95,29 +107,30 @@ class AstraDBCollection:
         return response
 
     @staticmethod
-    def paginate(*, method, options, **kwargs):
-        response0 = method(options=options, **kwargs)
+    def paginate(*, request_method: Callable[..., JSON_DICT], options: Optional[JSON_DICT], **kwargs: Any) -> Iterable[JSON_DICT]:
+        _options = options or {}
+        response0 = request_method(options=_options, **kwargs)
         next_page_state = response0["data"]["nextPageState"]
-        options0 = options
+        options0 = _options
         for document in response0["data"]["documents"]:
             yield document
         while next_page_state is not None:
             options1 = {**options0, **{"pagingState": next_page_state}}
-            response1 = method(options=options1, **kwargs)
+            response1 = request_method(options=options1, **kwargs)
             for document in response1["data"]["documents"]:
                 yield document
             next_page_state = response1["data"]["nextPageState"]
 
-    def paginated_find(self, filter=None, projection=None, sort=None, options=None):
+    def paginated_find(self, filter: Optional[JSON_DICT] = None, projection: Optional[JSON_DICT] = None, sort: Optional[JSON_DICT] = None, options: Optional[JSON_DICT] = None) -> Iterable[JSON_DICT]:
         return self.paginate(
-            method=self.find,
+            request_method=self.find,
             filter=filter,
             projection=projection,
             sort=sort,
             options=options,
         )
 
-    def pop(self, filter, update, options):
+    def pop(self, filter: Optional[JSON_DICT], update: Optional[JSON_DICT], options: Optional[JSON_DICT]) -> JSON_DICT:
         json_query = make_payload(
             top_level="findOneAndUpdate", filter=filter, update=update, options=options
         )
@@ -130,7 +143,7 @@ class AstraDBCollection:
 
         return response
 
-    def push(self, filter, update, options):
+    def push(self, filter: Optional[JSON_DICT], update: Optional[JSON_DICT], options: Optional[JSON_DICT]) -> JSON_DICT:
         json_query = make_payload(
             top_level="findOneAndUpdate", filter=filter, update=update, options=options
         )
@@ -144,8 +157,8 @@ class AstraDBCollection:
         return response
 
     def find_one_and_replace(
-        self, sort={}, filter=None, replacement=None, options=None
-    ):
+        self, sort: JSON_DICT = {}, filter: Optional[JSON_DICT] = None, replacement: Optional[JSON_DICT] = None, options: Optional[JSON_DICT] = None
+    ) -> JSON_DICT:
         json_query = make_payload(
             top_level="findOneAndReplace",
             filter=filter,
@@ -160,7 +173,7 @@ class AstraDBCollection:
 
         return response
 
-    def find_one_and_update(self, sort={}, update=None, filter=None, options=None):
+    def find_one_and_update(self, sort: Optional[JSON_DICT] = {}, update: Optional[JSON_DICT] = None, filter: Optional[JSON_DICT] = None, options: Optional[JSON_DICT] = None) -> JSON_DICT:
         json_query = make_payload(
             top_level="findOneAndUpdate",
             filter=filter,
@@ -177,7 +190,7 @@ class AstraDBCollection:
 
         return response
 
-    def find_one(self, filter={}, projection={}, sort={}, options={}):
+    def find_one(self, filter: Optional[JSON_DICT] = {}, projection: Optional[JSON_DICT] = {}, sort: Optional[JSON_DICT] = {}, options: Optional[JSON_DICT] = {}) -> JSON_DICT:
         json_query = make_payload(
             top_level="findOne",
             filter=filter,
@@ -192,7 +205,7 @@ class AstraDBCollection:
 
         return response
 
-    def insert_one(self, document):
+    def insert_one(self, document: JSON_DICT) -> JSON_DICT:
         json_query = make_payload(top_level="insertOne", document=document)
 
         response = self._request(
@@ -201,9 +214,10 @@ class AstraDBCollection:
 
         return response
 
-    def insert_many(self, documents, options=None, partial_failures_allowed=False):
+    def insert_many(self, documents: Iterable[JSON_DICT], options: Optional[JSON_DICT] = None, partial_failures_allowed: bool = False) -> JSON_DICT:
+        _documents = list(documents)
         json_query = make_payload(
-            top_level="insertMany", documents=documents, options=options
+            top_level="insertMany", documents=_documents, options=options
         )
 
         response = self._request(
@@ -215,7 +229,7 @@ class AstraDBCollection:
 
         return response
 
-    def update_one(self, filter, update):
+    def update_one(self, filter: JSON_DICT, update: JSON_DICT) -> JSON_DICT:
         json_query = make_payload(top_level="updateOne", filter=filter, update=update)
 
         response = self._request(
@@ -226,10 +240,10 @@ class AstraDBCollection:
 
         return response
 
-    def replace(self, path, document):
+    def replace(self, path: str, document: JSON_DICT) -> JSON_DICT:
         return self._put(path=path, document=document)
 
-    def delete(self, id):
+    def delete(self, id: str) -> JSON_DICT:
         json_query = {
             "deleteOne": {
                 "filter": {"_id": id},
@@ -242,7 +256,7 @@ class AstraDBCollection:
 
         return response
 
-    def delete_subdocument(self, id, subdoc):
+    def delete_subdocument(self, id: str, subdoc: str) -> JSON_DICT:
         json_query = {
             "findOneAndUpdate": {
                 "filter": {"_id": id},
@@ -256,7 +270,7 @@ class AstraDBCollection:
 
         return response
 
-    def upsert(self, document):
+    def upsert(self, document: JSON_DICT) -> str:
         """
         Emulate an upsert operation for a single document,
         whereby a document is inserted if its _id is new, or completely
@@ -277,9 +291,9 @@ class AstraDBCollection:
                 filter={"_id": document["_id"]},
                 replacement=document,
             )
-            upserted_id = result["data"]["document"]["_id"]
+            upserted_id = cast(str, result["data"]["document"]["_id"])
         else:
-            upserted_id = result["status"]["insertedIds"][0]
+            upserted_id = cast(str, result["status"]["insertedIds"][0])
 
         return upserted_id
 
@@ -287,10 +301,10 @@ class AstraDBCollection:
 class AstraDB:
     def __init__(
         self,
-        token=None,
-        api_endpoint=None,
-        namespace=None,
-    ):
+        token: Optional[str] = None,
+        api_endpoint: Optional[str] = None,
+        namespace: Optional[str] = None,
+    ) -> None:
         if token is None or api_endpoint is None:
             raise AssertionError("Must provide token and api_endpoint")
 
@@ -317,28 +331,26 @@ class AstraDB:
         # Set the namespace parameter
         self.namespace = namespace
 
-    def _request(self, *args, skip_error_check=False, **kwargs):
+    def _request(self, method: str, path: str, json_data: Optional[JSON_DICT], skip_error_check: bool = False) -> JSON_DICT:
         response = make_request(
-            *args,
-            **kwargs,
             base_url=self.base_url,
             auth_header=DEFAULT_AUTH_HEADER,
             token=self.token,
+            method=method,
+            path=path,
+            json_data=json_data,
         )
-
-        responsebody = response.json()
+        responsebody = cast(JSON_DICT, response.json())
 
         if not skip_error_check and "errors" in responsebody:
             raise ValueError(json.dumps(responsebody["errors"]))
         else:
             return responsebody
 
-        return result
-
-    def collection(self, collection_name):
+    def collection(self, collection_name: str) -> AstraDBCollection:
         return AstraDBCollection(collection_name=collection_name, astra_db=self)
 
-    def get_collections(self):
+    def get_collections(self) -> JSON_DICT:
         response = self._request(
             method=http_methods.POST,
             path=self.base_path,
@@ -348,8 +360,8 @@ class AstraDB:
         return response
 
     def create_collection(
-        self, options=None, dimension=None, metric="", collection_name=""
-    ):
+        self, options: Optional[JSON_DICT] = None, dimension: Optional[int] = None, metric: str = "", collection_name: str = ""
+    ) -> JSON_DICT:
         # Initialize options if not passed
         if not options:
             options = {"vector": {}}
@@ -386,7 +398,7 @@ class AstraDB:
 
         return response
 
-    def delete_collection(self, collection_name=""):
+    def delete_collection(self, collection_name: str = "") -> JSON_DICT:
         response = self._request(
             method=http_methods.POST,
             path=f"{self.base_path}",
